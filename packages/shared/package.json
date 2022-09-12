@@ -1,0 +1,18 @@
+{
+  "name": "@speeddrawer/shared",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "declaration": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.16",
+    "typescript": "^4.8.3"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "avsc": "^5.7.5"
+  }
+}
