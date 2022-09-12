@@ -1,9 +1,17 @@
-function App() {
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import GamePage from "./routes/GamePage";
+import MainPage from "./routes/MainPage";
+
+const App = () => {
     return (
-        <div className="App">
-            <h1>Hello World</h1>
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<MainPage />} />
+                <Route path="/game" element={<GamePage />} />
+                <Route path="*" element={<div>404</div>} />
+            </Routes>
+        </BrowserRouter>
     );
-}
+};
 
 export default App;
