@@ -1,3 +1,18 @@
 @tailwind base
 @tailwind components
 @tailwind utilities
+
+@layer base
+    canvas
+        image-rendering: pixelated
+        shape-rendering: pixelated
+        text-rendering: pixelated
+        cursor: crosshair
+
+    .preview
+        pointer-events: none
+
+    button
+        @apply py-2 px-4 border
+        .selected
+            @apply bg-blue-500 text-white

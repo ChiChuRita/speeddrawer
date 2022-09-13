@@ -12,7 +12,7 @@ class Color {
     }
 
     public toRGBAString() {
-        return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a})`;
+        return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a / 255})`;
     }
 
     public static fromHex(hex: string) {
@@ -30,6 +30,10 @@ class Color {
         const b = parseInt(rgbaValues[2]);
         const a = parseFloat(rgbaValues[3]);
         return new Color(r, g, b, a);
+    }
+
+    public get preview() {
+        return new Color(this.r, this.g, this.b, 128);
     }
 
     public static transparent = new Color(0, 0, 0, 0);

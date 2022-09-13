@@ -1,7 +1,14 @@
 import { useEffect, useRef } from "react";
+import Color from "../color";
 import useMyCanvasStore from "../stores/MyCanvasStore";
+import DrawingTools from "./DrawingTools";
 
-const MyCanvas = () => {
+interface MyCanvasProps {
+    width: number;
+    height: number;
+}
+
+const MyCanvas: React.FC<MyCanvasProps> = ({ width, height }) => {
     const mount = useMyCanvasStore((state) => state.mount);
     const unmount = useMyCanvasStore((state) => state.unmount);
     const canvas = useRef<HTMLCanvasElement>(null);
@@ -18,8 +25,33 @@ const MyCanvas = () => {
 
     return (
         <div>
-            <canvas ref={canvas}>Your browser is rubbish!</canvas>
-            <canvas ref={previewCanvas}></canvas>
+            <div className="relative h-[512px] w-[512px]">
+                <canvas
+                    className="absolute h-full w-full border"
+                    ref={canvas}
+                    width={width}
+                    height={height}
+                >
+                    Your browser is rubbish!
+                </canvas>
+                <canvas
+                    className="preview absolute h-full w-full border"
+                    ref={previewCanvas}
+                    width={width}
+                    height={height}
+                ></canvas>
+            </div>
+            <DrawingTools
+                colors={[
+                    Color.black,
+                    Color.blue,
+                    Color.red,
+                    Color.green,
+                    Color.yellow,
+                    Color.gray,
+                    Color.purple,
+                ]}
+            />
         </div>
     );
 };

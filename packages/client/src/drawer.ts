@@ -1,4 +1,5 @@
 import bresenham from "bresenham";
+import Filler from "q-floodfill";
 import Color from "./color";
 
 export interface Point {
@@ -14,7 +15,7 @@ class Drawer {
     }
 
     public drawPixel(point: Point, color: Color) {
-        this.ctx.fillStyle = color.toString();
+        this.ctx.fillStyle = color.toRGBAString();
         this.ctx.fillRect(point.x, point.y, 1, 1);
     }
 
@@ -33,13 +34,25 @@ class Drawer {
         this.ctx.fillRect(
             firstPoint.x,
             firstPoint.y,
-            secondPoint.x - firstPoint.x,
-            secondPoint.y - firstPoint.y
+            secondPoint.x - firstPoint.x + 1,
+            secondPoint.y - firstPoint.y + 1
         );
     }
 
     public drawCircle() {
         //TODO
+    }
+
+    public fill(point: Point, color: Color) {
+        const imageData = this.ctx.getImageData(
+            0,
+            0,
+            this.ctx.canvas.width,
+            this.ctx.canvas.height
+        );
+        const filler = new Filler(imageData);
+        filler.fill(color.toRGBAString(), point.x, point.y, 0);
+        this.ctx.putImageData(imageData, 0, 0);
     }
 
     public clear() {
