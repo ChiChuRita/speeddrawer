@@ -118,6 +118,11 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
                     );
                     break;
                 case InputMode.DrawCircle:
+                    previewDrawer.drawCircle(
+                        firstPos || currentPos,
+                        currentPos,
+                        currentColor.preview
+                    );
                     break;
                 case InputMode.DrawFill:
                     previewDrawer.drawPixel(currentPos, currentColor.preview);
@@ -136,7 +141,9 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
                     break;
                 case InputMode.DrawRect:
                     drawer.drawRect(firstPos!, currentPos, currentColor);
+                    break;
                 case InputMode.DrawCircle:
+                    drawer.drawCircle(firstPos!, currentPos, currentColor);
                     break;
                 case InputMode.DrawFill:
                     break;
@@ -157,6 +164,8 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
     },
     unmount: () => {
         const canvas = get().canvas;
+        const drawer = get().drawer;
+        drawer?.clear();
         canvas?.removeEventListener("mousedown", onMouseDown);
         canvas?.removeEventListener("mousemove", onMouseMove);
         canvas?.removeEventListener("mouseup", onMouseUp);

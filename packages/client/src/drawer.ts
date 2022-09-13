@@ -39,8 +39,38 @@ class Drawer {
         );
     }
 
-    public drawCircle() {
-        //TODO
+    public drawCircle(firstPoint: Point, secondPoint: Point, color: Color) {
+        let radius = Math.sqrt(
+            Math.pow(secondPoint.x - firstPoint.x, 2) +
+                Math.pow(secondPoint.y - firstPoint.y, 2)
+        );
+
+        let imageData = this.ctx.getImageData(
+            firstPoint.x - radius,
+            firstPoint.y - radius,
+            radius * 2,
+            radius * 2
+        );
+
+        for (let x = 0; x < imageData.width; x++) {
+            for (let y = 0; y < imageData.height; y++) {
+                let index = (x + y * imageData.width) * 4;
+                let dx = x - radius;
+                let dy = y - radius;
+                if (dx * dx + dy * dy < radius * radius) {
+                    imageData.data[index] = color.r;
+                    imageData.data[index + 1] = color.g;
+                    imageData.data[index + 2] = color.b;
+                    imageData.data[index + 3] = color.a;
+                }
+            }
+        }
+
+        this.ctx.putImageData(
+            imageData,
+            firstPoint.x - radius,
+            firstPoint.y - radius
+        );
     }
 
     public fill(point: Point, color: Color) {
