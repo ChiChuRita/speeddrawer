@@ -13,6 +13,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "avsc": "^5.7.5"
+    "avsc": "^5.7.5",
+    "chalk": "4.1.2"
   }
 }
