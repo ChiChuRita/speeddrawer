@@ -1,6 +1,5 @@
 import create from "zustand";
 import Drawer, { Point } from "../drawer";
-import DrawStack from "../drawStack";
 import Color from "../color";
 
 interface MyCanvasStore {
@@ -8,7 +7,6 @@ interface MyCanvasStore {
     previewCanvas: HTMLCanvasElement | null;
     drawer: Drawer | null;
     previewDrawer: Drawer | null;
-    drawStack: DrawStack | null;
     inputMode: InputMode;
     inputColor: Color;
     setInputMode: (mode: InputMode) => void;
@@ -51,13 +49,11 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
         const previewCtx = previewCanvas.getContext("2d")!; //probalby do some error handling here
         const drawer = new Drawer(ctx);
         const previewDrawer = new Drawer(previewCtx);
-        const drawStack = new DrawStack();
         set({
             canvas,
             previewCanvas,
             drawer,
             previewDrawer,
-            drawStack,
         });
 
         const canvasWidthPixelRatio = canvas.width / canvas.clientWidth;
@@ -81,6 +77,7 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
             switch (currentMode) {
                 case InputMode.DrawLine:
                     if (ev.buttons !== 1) return;
+                    drawer.begin();
                     previewDrawer.drawPixel(firstPos, currentColor.preview);
                     break;
                 case InputMode.DrawRect:
@@ -93,7 +90,7 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
                 case InputMode.DrawCircle:
                     break;
                 case InputMode.DrawFill:
-                    drawer.fill(firstPos, currentColor);
+                    drawer.fill(firstPos, currentColor, true);
                     break;
             }
             lastPos = firstPos;
@@ -107,8 +104,12 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
             switch (currentMode) {
                 case InputMode.DrawLine:
                     previewDrawer.drawPixel(currentPos, currentColor.preview);
-                    if (!lastPos) return;
-                    drawer.drawLine(lastPos, currentPos, currentColor);
+                    if (
+                        !lastPos ||
+                        (lastPos.x == currentPos.x && lastPos.y == currentPos.y)
+                    )
+                        return;
+                    drawer.drawLine(lastPos, currentPos, currentColor, true);
                     break;
                 case InputMode.DrawRect:
                     previewDrawer.drawRect(
@@ -138,12 +139,18 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
             const currentMode = get().inputMode;
             switch (currentMode) {
                 case InputMode.DrawLine:
+                    drawer.end();
                     break;
                 case InputMode.DrawRect:
-                    drawer.drawRect(firstPos!, currentPos, currentColor);
+                    drawer.drawRect(firstPos!, currentPos, currentColor, true);
                     break;
                 case InputMode.DrawCircle:
-                    drawer.drawCircle(firstPos!, currentPos, currentColor);
+                    drawer.drawCircle(
+                        firstPos!,
+                        currentPos,
+                        currentColor,
+                        true
+                    );
                     break;
                 case InputMode.DrawFill:
                     break;
@@ -175,7 +182,6 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
             previewCanvas: null,
             drawer: null,
             previewDrawer: null,
-            drawStack: null,
         });
     },
 }));

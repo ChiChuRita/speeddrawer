@@ -49,10 +49,26 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ colors }) => {
                 <button
                     className={btnClass(-1)}
                     onClick={() => {
-                        drawer?.clear();
+                        drawer?.clear(true);
                     }}
                 >
                     Clear
+                </button>
+                <button
+                    className={btnClass(-1)}
+                    onClick={() => {
+                        drawer?.undo();
+                    }}
+                >
+                    Undo
+                </button>
+                <button
+                    className={btnClass(-1)}
+                    onClick={() => {
+                        drawer?.redo();
+                    }}
+                >
+                    Redo
                 </button>
             </div>
             <div className="gap- flex flex-row gap-2">
