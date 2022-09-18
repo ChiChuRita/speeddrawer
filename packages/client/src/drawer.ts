@@ -182,6 +182,50 @@ class Drawer {
         });
     }
 
+    public pixelate(batchSize = 2) {
+        const imageData = this.ctx.getImageData(
+            0,
+            0,
+            this.ctx.canvas.width,
+            this.ctx.canvas.height
+        );
+        const newImageData = this.ctx.createImageData(
+            this.ctx.canvas.width,
+            this.ctx.canvas.height
+        );
+        for (let x = 0; x < imageData.width; x += batchSize) {
+            for (let y = 0; y < imageData.height; y += batchSize) {
+                let r = 0;
+                let g = 0;
+                let b = 0;
+                let a = 0;
+                for (let i = 0; i < batchSize; i++) {
+                    for (let j = 0; j < batchSize; j++) {
+                        const index = (x + i + (y + j) * imageData.width) * 4;
+                        r += imageData.data[index];
+                        g += imageData.data[index + 1];
+                        b += imageData.data[index + 2];
+                        a += imageData.data[index + 3];
+                    }
+                }
+                r /= batchSize * batchSize;
+                g /= batchSize * batchSize;
+                b /= batchSize * batchSize;
+                a /= batchSize * batchSize;
+                for (let i = 0; i < batchSize; i++) {
+                    for (let j = 0; j < batchSize; j++) {
+                        const index = (x + i + (y + j) * imageData.width) * 4;
+                        newImageData.data[index] = r;
+                        newImageData.data[index + 1] = g;
+                        newImageData.data[index + 2] = b;
+                        newImageData.data[index + 3] = a;
+                    }
+                }
+            }
+        }
+        this.ctx.putImageData(newImageData, 0, 0);
+    }
+
     public debug = () => {
         console.log(this.drawStack.stack);
     };
