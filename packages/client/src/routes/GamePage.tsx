@@ -1,5 +1,6 @@
 import React from "react";
 import MyCanvas from "../components/MyCanvas";
+import RemoteCanvas from "../components/RemoteCanvas";
 
 const GamePage = () => {
     return (

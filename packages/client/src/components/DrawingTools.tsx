@@ -70,6 +70,13 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ colors }) => {
                 >
                     Redo
                 </button>
+                <button
+                    onClick={() => {
+                        drawer?.pixelate();
+                    }}
+                >
+                    Pixelate
+                </button>
             </div>
             <div className="gap- flex flex-row gap-2">
                 {colors.map((color) => (
