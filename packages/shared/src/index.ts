@@ -1,11 +1,11 @@
 import { Type } from "avsc";
-import { consoleLog } from "./console-log";
 
 export enum MessageType {
     CHANGE_ROOM,
     LEAVE_ROOM,
     CHAT_MESSAGE,
     CHANGE_USERNAME,
+    NOTIFICATION,
 }
 
 export interface GenericMessage {
@@ -109,5 +109,33 @@ export class ChangeRoomMessage {
 
     toBuffer(): Buffer {
         return msgToBuffer(MessageType.CHANGE_ROOM, ChangeRoomSchema, this);
+    }
+}
+
+const NotificationSchema = Type.forSchema({
+    type: "record",
+    name: "NotificationMessage",
+    fields: [
+        { name: "username", type: "string" },
+        { name: "content", type: "string" },
+    ],
+});
+
+export class NotificationMessage {
+    username: string;
+    content: string;
+    constructor(username: string, content: string) {
+        this.username = username;
+        this.content = content;
+    }
+
+    static fromBuffer(message: GenericMessage): NotificationMessage {
+        return NotificationSchema.fromBuffer(
+            message.payload
+        ) as NotificationMessage;
+    }
+
+    toBuffer(): Buffer {
+        return msgToBuffer(MessageType.NOTIFICATION, NotificationSchema, this);
     }
 }

@@ -7,36 +7,15 @@ import {
     GenericMessage,
     ChangeRoomMessage,
     LeaveRoomMessage,
+    NotificationMessage,
 } from "@speeddrawer/shared";
 import { nanoid } from "nanoid";
-
-//DELETE!
-export enum InfoLevel {
-    INFO,
-    WARNING,
-    ERROR,
-}
-
-export const consoleLog = (msg: string, level: InfoLevel) => {
-    let prefix;
-    switch (level) {
-        case InfoLevel.INFO:
-            prefix = "[Info]";
-            break;
-        case InfoLevel.WARNING:
-            prefix = "[Warning]";
-            break;
-        case InfoLevel.ERROR:
-            prefix = "[Error]";
-            break;
-    }
-    console.log(`${prefix} ${msg}`);
-};
+import { consoleLog, InfoLevel } from "./console-log";
 
 class User {
     username: string;
     id: string;
-    currentRoom: Room;
+    currentGameRoom: GameRoom;
     ws: WebSocket;
     isAlive: boolean;
     static users = new Map<WebSocket, User>();
@@ -45,7 +24,7 @@ class User {
         const uid = nanoid(6);
         this.username = "User" + uid;
         this.id = uid;
-        this.currentRoom = new Room(uid, this);
+        this.currentGameRoom = new GameRoom(uid, this);
         this.ws = ws;
         this.isAlive = true;
 
@@ -72,56 +51,90 @@ class User {
         this.disconnect();
     }
 
-    changeRoom(roomId: string) {
-        //TODO: Check if room is not full
-        const roomToJoin = Room.rooms.get(roomId);
-        if (roomToJoin !== undefined && roomToJoin !== this.currentRoom) {
-            this.currentRoom.removeUser(this);
-            this.currentRoom = roomToJoin;
-            this.currentRoom.addUser(this);
+    changeGameRoom(GameRoomId: string): boolean {
+        //TODO: Check if GameRoom is not full
+        const GameRoomToJoin = GameRoom.GameRooms.get(GameRoomId);
+        if (
+            GameRoomToJoin !== undefined &&
+            GameRoomToJoin !== this.currentGameRoom
+        ) {
+            this.currentGameRoom.removeUser(this);
+            this.currentGameRoom = GameRoomToJoin;
+            this.currentGameRoom.addUser(this);
+
+            this.currentGameRoom.sendToAll(
+                new NotificationMessage(
+                    this.username,
+                    "joined the GameRoom"
+                ).toBuffer(),
+                this
+            );
+            return true;
         } else {
-            consoleLog(`Room ${roomId} does not exist`, InfoLevel.WARNING);
+            consoleLog(
+                `GameRoom ${GameRoomId} does not exist`,
+                InfoLevel.WARNING
+            );
+            return false;
         }
     }
-    leaveRoom() {
-        this.currentRoom.removeUser(this);
-        const newRoomId = nanoid(6);
-        this.currentRoom = new Room(newRoomId, this);
+    leaveGameRoom() {
+        this.currentGameRoom.removeUser(this);
+        const newGameRoomId = nanoid(6);
+        this.currentGameRoom = new GameRoom(newGameRoomId, this);
     }
 
     terminate() {
         this.ws.terminate();
-        this.currentRoom.removeUser(this);
+        this.currentGameRoom.removeUser(this);
         User.users.delete(this.ws);
     }
     disconnect() {
         this.ws.close();
-        this.currentRoom.removeUser(this);
+        this.currentGameRoom.removeUser(this);
         User.users.delete(this.ws);
     }
     alive() {
         this.isAlive = true;
     }
+    sendMessage(message: Buffer) {
+        if (this.ws.readyState === WebSocket.OPEN) this.ws.send(message);
+    }
+
+    // TODO: Notificate all users in the GameRoom
+    changeUsername(newUsername: string) {
+        this.username = newUsername;
+    }
 }
 
-class Room {
+class GameRoom {
     id: string;
     users: User[];
-    static rooms = new Map<string, Room>();
+    hasStarted: boolean;
+    owner: User;
+    static GameRooms = new Map<string, GameRoom>();
 
     constructor(id: string, firstUser: User) {
         this.id = id;
         this.users = [firstUser];
+        this.hasStarted = false;
+        this.owner = firstUser;
 
-        Room.rooms.set(id, this);
+        GameRoom.GameRooms.set(id, this);
     }
+
     removeUser(user: User) {
-        if (user.currentRoom) {
+        if (user.currentGameRoom) {
             const index = this.users.indexOf(user);
             if (index > -1) {
                 this.users.splice(index, 1);
                 if (this.users.length === 0) {
-                    Room.rooms.delete(this.id);
+                    GameRoom.GameRooms.delete(this.id);
+                    return;
+                }
+                // If the user was the owner, set a new owner
+                if (user === this.owner) {
+                    this.setNewOwner();
                 }
             } else {
                 user.idCollision();
@@ -129,27 +142,55 @@ class Room {
             }
         } else {
             user.idCollision();
+            return;
         }
     }
+
     addUser(user: User) {
-        if (user.currentRoom && user.currentRoom === this) {
+        if (user.currentGameRoom && user.currentGameRoom === this) {
             this.users.push(user);
         } else {
             user.idCollision();
         }
+    }
+
+    sendToAll(message: Buffer, except?: User) {
+        this.users.forEach((user) => {
+            if (user.ws.readyState === WebSocket.OPEN && user !== except) {
+                user.sendMessage(message);
+            }
+        });
+    }
+
+    // TODO: Send notification to all users that the owner changed
+    setNewOwner() {
+        this.owner = this.users[0];
+    }
+
+    // TODO: Send notification to all users that the Game started
+    startGame() {
+        this.hasStarted = true;
+        setTimeout(() => {
+            this.endGame();
+        }, 120000);
+    }
+
+    // TODO: Send notification to all users that the Game ended
+    endGame() {
+        this.hasStarted = false;
     }
 }
 
 const port = +(process.env.PORT || 1234);
 
 const sendChatMessage = (user: User, message: ChatMessage) => {
-    if (user.currentRoom) {
-        user.currentRoom.users.forEach((roomUser) => {
+    if (user.currentGameRoom) {
+        user.currentGameRoom.users.forEach((GameRoomUser) => {
             if (
-                roomUser.ws.readyState === WebSocket.OPEN &&
-                roomUser.ws !== user.ws
+                GameRoomUser.ws.readyState === WebSocket.OPEN &&
+                GameRoomUser.ws !== user.ws
             ) {
-                roomUser.ws.send(message.toBuffer());
+                GameRoomUser.ws.send(message.toBuffer());
             }
         });
     }
@@ -161,10 +202,10 @@ const handleMessage = (user: User, data: any) => {
     switch (genericMessage.type) {
         case MessageType.CHANGE_ROOM:
             message = ChangeRoomMessage.fromBuffer(genericMessage);
-            user.changeRoom(message.room);
+            user.changeGameRoom(message.room);
             break;
         case MessageType.LEAVE_ROOM:
-            user.leaveRoom();
+            user.leaveGameRoom();
             break;
         case MessageType.CHAT_MESSAGE:
             message = ChatMessage.fromBuffer(genericMessage);
