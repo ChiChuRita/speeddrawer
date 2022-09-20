@@ -10,7 +10,7 @@ export interface Point {
 
 class Drawer {
     private readonly ctx: CanvasRenderingContext2D;
-    private readonly drawStack: DrawStack;
+    public readonly drawStack: DrawStack;
 
     constructor(ctx: CanvasRenderingContext2D) {
         this.ctx = ctx;
@@ -18,7 +18,7 @@ class Drawer {
     }
 
     public drawPixel(point: Point, color: Color, stack = false) {
-        this.ctx.fillStyle = color.toRGBAString();
+        this.ctx.fillStyle = color.rgba;
         this.ctx.fillRect(point.x, point.y, 1, 1);
         if (stack) this.drawStack.pushPixel(point, color);
     }
@@ -54,7 +54,7 @@ class Drawer {
         color: Color,
         stack = false
     ) {
-        this.ctx.fillStyle = color.toRGBAString();
+        this.ctx.fillStyle = color.rgba;
         this.ctx.fillRect(
             firstPoint.x,
             firstPoint.y,
@@ -112,7 +112,7 @@ class Drawer {
             this.ctx.canvas.height
         );
         const filler = new Filler(imageData);
-        filler.fill(color.toRGBAString(), point.x, point.y, 0);
+        filler.fill(color.rgba, point.x, point.y, 0);
         this.ctx.putImageData(imageData, 0, 0);
         if (stack) this.drawStack.pushFill(point, color);
     }

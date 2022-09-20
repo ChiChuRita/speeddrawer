@@ -162,6 +162,7 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
         onMouseLeave = (ev: globalThis.MouseEvent) => {
             previewDrawer.clear();
             firstPos = null;
+            lastPos = null;
         };
 
         canvas.addEventListener("mousedown", onMouseDown);

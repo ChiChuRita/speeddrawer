@@ -1,18 +1,16 @@
 class Color {
-    public r: number;
-    public g: number;
-    public b: number;
-    public a: number;
+    public readonly r: number;
+    public readonly g: number;
+    public readonly b: number;
+    public readonly a: number;
+    public readonly rgba: string;
 
     constructor(r: number, g: number, b: number, a: number) {
         this.r = r;
         this.g = g;
         this.b = b;
         this.a = a;
-    }
-
-    public toRGBAString() {
-        return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a / 255})`;
+        this.rgba = `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a / 255})`;
     }
 
     public static fromHex(hex: string) {
