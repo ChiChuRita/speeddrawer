@@ -4,46 +4,44 @@ import Drawer from "../drawer";
 import Color from "../color";
 
 interface GameStore {
-    buffer: DrawCommand[];
+    drawer: Drawer | null;
     remoteCanvas: HTMLCanvasElement | null;
     remoteDrawer: Drawer | null;
-    pushToBuffer: (command: DrawCommand) => void;
-    start: (remoteCanvas: HTMLCanvasElement) => void;
+    start: (remoteCanvas: HTMLCanvasElement, drawer: Drawer) => void;
     stop: () => void;
 }
 
 let intervalFunction: any;
 
 const useGameStore = create<GameStore>((set, get) => ({
-    buffer: [],
+    drawer: null,
     remoteCanvas: null,
     remoteDrawer: null,
-    start: (remoteCanvas: HTMLCanvasElement) => {
+    start: (remoteCanvas: HTMLCanvasElement, drawer: Drawer) => {
         const ctx = remoteCanvas.getContext("2d")!;
         const remoteDrawer = new Drawer(ctx);
         set({
             remoteCanvas,
             remoteDrawer,
+            drawer,
         });
 
         intervalFunction = setInterval(() => {
-            const buffer = get().buffer;
-            if (buffer.length > 0) {
-                remoteDrawer.draw(buffer, true);
-                remoteDrawer.pixelate();
-                set({ buffer: [] });
+            const drawStack = get().drawer?.drawStack;
+            if (drawStack) {
+                remoteDrawer.clear();
+                remoteDrawer.draw(drawStack.stack);
             }
-        }, 60);
+            remoteDrawer.pixelate();
+        }, 70);
     },
     stop: () => {
         clearInterval(intervalFunction);
         set({
             remoteCanvas: null,
             remoteDrawer: null,
+            drawer: null,
         });
-    },
-    pushToBuffer: (command: DrawCommand) => {
-        set((state) => ({ buffer: [...state.buffer, command] }));
     },
 }));
 

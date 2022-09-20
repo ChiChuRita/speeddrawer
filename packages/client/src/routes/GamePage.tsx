@@ -4,8 +4,9 @@ import RemoteCanvas from "../components/RemoteCanvas";
 
 const GamePage = () => {
     return (
-        <div className="flex h-screen w-screen flex-row items-center justify-center">
-            <MyCanvas width={16} height={16} />
+        <div className="flex h-screen w-screen flex-col items-center justify-center">
+            <MyCanvas width={32} height={32} />
+            <RemoteCanvas width={32} height={32} />
         </div>
     );
 };

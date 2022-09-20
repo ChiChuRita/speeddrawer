@@ -1,24 +1,31 @@
 import useGameStore from "../stores/GameStore";
 import { useEffect, useRef } from "react";
+import useMyCanvasStore from "../stores/MyCanvasStore";
 
-const RemoteCanvas = () => {
+interface RemoteCanvasProps {
+    width: number;
+    height: number;
+}
+
+const RemoteCanvas: React.FC<RemoteCanvasProps> = ({ width, height }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { start, stop } = useGameStore();
+    const drawer = useMyCanvasStore((state) => state.drawer);
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        start(canvas);
+        if (drawer) start(canvas, drawer);
         return () => stop();
-    }, []);
+    }, [drawer]);
 
     return (
         <canvas
             ref={canvasRef}
-            className="h-[256px] w-[256px]"
-            width={16}
-            height={16}
+            className="h-[256px] w-[256px] border"
+            width={width}
+            height={height}
         ></canvas>
     );
 };

@@ -81,10 +81,10 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ colors }) => {
             <div className="gap- flex flex-row gap-2">
                 {colors.map((color) => (
                     <button
-                        key={color.toRGBAString()}
+                        key={color.rgba}
                         onClick={() => setInputColor(color)}
                         className={`h-8 w-8 rounded-full`}
-                        style={{ backgroundColor: color.toRGBAString() }}
+                        style={{ backgroundColor: color.rgba }}
                     />
                 ))}
             </div>

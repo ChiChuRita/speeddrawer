@@ -24,13 +24,14 @@ const MyCanvas: React.FC<MyCanvasProps> = ({ width, height }) => {
     });
 
     return (
-        <div>
+        <div className="flex flex-col items-center">
             <div className="relative h-[512px] w-[512px]">
                 <canvas
                     className="absolute h-full w-full border"
                     ref={canvas}
                     width={width}
                     height={height}
+                    onContextMenu={(ev) => ev.preventDefault()}
                 >
                     Your browser is rubbish!
                 </canvas>
@@ -39,6 +40,7 @@ const MyCanvas: React.FC<MyCanvasProps> = ({ width, height }) => {
                     ref={previewCanvas}
                     width={width}
                     height={height}
+                    onContextMenu={(ev) => ev.preventDefault()}
                 ></canvas>
             </div>
             <DrawingTools
@@ -50,6 +52,14 @@ const MyCanvas: React.FC<MyCanvasProps> = ({ width, height }) => {
                     Color.yellow,
                     Color.gray,
                     Color.purple,
+                    Color.white,
+                    Color.magenta,
+                    Color.cyan,
+                    Color.navy,
+                    Color.olive,
+                    Color.silver,
+                    Color.maroon,
+                    Color.teal,
                 ]}
             />
         </div>

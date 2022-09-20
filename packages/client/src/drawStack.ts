@@ -20,27 +20,27 @@ export interface DrawCommand {
 }
 
 export class DrawStack {
-    private undoStack: Array<DrawCommand> = [];
-    private redoStack: Array<DrawCommand> = [];
+    private undoStack: DrawCommand[] = [];
+    private redoStack: DrawCommand[] = [];
 
     public get stack() {
         return this.undoStack;
     }
 
     public pushBegin() {
-        this.undoStack.push({ type: DrawType.Begin, points: [] });
+        this.pushCommand({ type: DrawType.Begin, points: [] });
     }
 
     public pushEnd() {
-        this.undoStack.push({ type: DrawType.End, points: [] });
+        this.pushCommand({ type: DrawType.End, points: [] });
     }
 
     public pushPixel(point: Point, color: Color) {
-        this.undoStack.push({ type: DrawType.Pixel, points: [point], color });
+        this.pushCommand({ type: DrawType.Pixel, points: [point], color });
     }
 
     public pushRect(firstPoint: Point, secondPoint: Point, color: Color) {
-        this.undoStack.push({
+        this.pushCommand({
             type: DrawType.Rect,
             points: [firstPoint, secondPoint],
             color,
@@ -48,7 +48,7 @@ export class DrawStack {
     }
 
     public pushCircle(firstPoint: Point, secondPoint: Point, color: Color) {
-        this.undoStack.push({
+        this.pushCommand({
             type: DrawType.Circle,
             points: [firstPoint, secondPoint],
             color,
@@ -56,11 +56,11 @@ export class DrawStack {
     }
 
     public pushFill(point: Point, color: Color) {
-        this.undoStack.push({ type: DrawType.Fill, points: [point], color });
+        this.pushCommand({ type: DrawType.Fill, points: [point], color });
     }
 
     public pushClear() {
-        this.undoStack.push({ type: DrawType.Clear, points: [] });
+        this.pushCommand({ type: DrawType.Clear, points: [] });
     }
 
     private pushCommand(command: DrawCommand) {

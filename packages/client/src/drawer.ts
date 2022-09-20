@@ -10,7 +10,7 @@ export interface Point {
 
 class Drawer {
     private readonly ctx: CanvasRenderingContext2D;
-    private readonly drawStack: DrawStack;
+    public readonly drawStack: DrawStack;
 
     constructor(ctx: CanvasRenderingContext2D) {
         this.ctx = ctx;
@@ -18,7 +18,7 @@ class Drawer {
     }
 
     public drawPixel(point: Point, color: Color, stack = false) {
-        this.ctx.fillStyle = color.toRGBAString();
+        this.ctx.fillStyle = color.rgba;
         this.ctx.fillRect(point.x, point.y, 1, 1);
         if (stack) this.drawStack.pushPixel(point, color);
     }
@@ -54,12 +54,16 @@ class Drawer {
         color: Color,
         stack = false
     ) {
-        this.ctx.fillStyle = color.toRGBAString();
+        this.ctx.fillStyle = color.rgba;
         this.ctx.fillRect(
             firstPoint.x,
             firstPoint.y,
-            secondPoint.x - firstPoint.x + 1,
-            secondPoint.y - firstPoint.y + 1
+            secondPoint.x -
+                firstPoint.x +
+                (secondPoint.x < firstPoint.x ? 0 : 1),
+            secondPoint.y -
+                firstPoint.y +
+                (secondPoint.y < firstPoint.y ? 0 : 1)
         );
         if (stack) this.drawStack.pushRect(firstPoint, secondPoint, color);
     }
@@ -74,6 +78,8 @@ class Drawer {
             Math.pow(secondPoint.x - firstPoint.x, 2) +
                 Math.pow(secondPoint.y - firstPoint.y, 2)
         );
+
+        if (radius < 1) return;
 
         let imageData = this.ctx.getImageData(
             firstPoint.x - radius,
@@ -112,7 +118,7 @@ class Drawer {
             this.ctx.canvas.height
         );
         const filler = new Filler(imageData);
-        filler.fill(color.toRGBAString(), point.x, point.y, 0);
+        filler.fill(color.rgba, point.x, point.y, 0);
         this.ctx.putImageData(imageData, 0, 0);
         if (stack) this.drawStack.pushFill(point, color);
     }
@@ -134,7 +140,6 @@ class Drawer {
     }
 
     public draw(drawCommands: DrawCommand[], stack = false) {
-        console.log(drawCommands);
         drawCommands.forEach((command) => {
             switch (command.type) {
                 case DrawType.Begin:
