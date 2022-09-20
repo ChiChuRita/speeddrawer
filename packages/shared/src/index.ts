@@ -1,11 +1,15 @@
 import { Type } from "avsc";
 
 export enum MessageType {
+    INITIALIZE_USER,
+    INITIALIZE_USER_RESPONSE,
+    KICK_USER,
+    USER_JOINED_INFO,
+    USER_LEFT_INFO,
     CHANGE_ROOM,
-    LEAVE_ROOM,
-    CHAT_MESSAGE,
-    CHANGE_USERNAME,
-    NOTIFICATION,
+    CHANGE_ROOM_INFO,
+    GAME_START,
+    GAME_START_INFO,
 }
 
 export interface GenericMessage {
@@ -13,11 +17,34 @@ export interface GenericMessage {
     payload: Buffer;
 }
 
+interface User {
+    id: string;
+    username: string;
+}
+
 const MessageSchema = Type.forSchema({
     type: "record",
     name: "Message",
     fields: [
-        { name: "type", type: "string" },
+        {
+            name: "type",
+            type: {
+                type: "enum",
+                name: "MessageType",
+                symbols: [
+                    "INITIALIZE_USER",
+                    "INITIALIZE_USER_RESPONSE",
+                    "KICK_USER",
+                    "USER_JOINED_INFO",
+                    "USER_LEFT_INFO",
+                    "CHANGE_ROOM",
+                    "CHANGE_ROOM_INFO",
+                    "GAME_START",
+                    "GAME_START_INFO",
+                ],
+            },
+        },
+
         { name: "payload", type: "bytes" },
     ],
 });
@@ -37,105 +64,221 @@ const msgToBuffer = (type: MessageType, schema: Type, message: any): Buffer => {
     });
 };
 
+class Message {
+    schema: Type;
+    type: MessageType;
+
+    constructor(schema: Type, type: MessageType) {
+        this.schema = schema;
+        this.type = type;
+    }
+
+    toBuffer(messageObj: any): Buffer {
+        return msgToBuffer(this.type, this.schema, messageObj);
+    }
+}
+
 // Create new schemas and message classes based on the template:
-const ChatMessageSchema = Type.forSchema({
+
+const InitializeUserSchema = Type.forSchema({
     type: "record",
-    name: "ChatMessage",
+    name: "InitializeUserMessage",
     fields: [
-        { name: "content", type: "string" },
+        { name: "username", type: "string" },
+        { name: "roomId", type: ["string", "null"], default: null },
+    ],
+});
+
+export class InitializeUserMessage extends Message {
+    username: string;
+    roomId: string | null;
+    private static readonly schema = InitializeUserSchema;
+    private static readonly type = MessageType.INITIALIZE_USER;
+
+    constructor(username: string, roomId: string | null) {
+        super(InitializeUserMessage.schema, InitializeUserMessage.type);
+        this.username = username;
+        this.roomId = roomId;
+    }
+
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
+    }
+
+    toBuffer(): Buffer {
+        return super.toBuffer(this);
+    }
+}
+
+const InitializeUserResponseSchema = Type.forSchema({
+    type: "record",
+    name: "InitializeUserMessage",
+    fields: [
+        { name: "userId", type: ["string", "null"], default: null },
+        { name: "room", type: ["string", "null"], default: null },
+        {
+            name: "users",
+            type: [
+                {
+                    type: "array",
+                    items: {
+                        name: "User",
+                        type: "record",
+                        fields: [
+                            { name: "id", type: "string" },
+                            { name: "username", type: "string" },
+                        ],
+                    },
+                },
+                "null",
+            ],
+            default: null,
+        },
+        { name: "ownerId", type: ["string", "null"], default: null },
+    ],
+});
+
+export class InitializeUserResponseMessage extends Message {
+    userId: string | null;
+    room: string | null;
+    users: User[] | null;
+    ownerId: string | null;
+
+    private static readonly schema = InitializeUserResponseSchema;
+    private static readonly type = MessageType.INITIALIZE_USER_RESPONSE;
+
+    constructor(
+        userId: string | null,
+        room: string | null,
+        users: User[] | null,
+        ownerId: string | null
+    ) {
+        super(
+            InitializeUserResponseMessage.schema,
+            InitializeUserResponseMessage.type
+        );
+        this.userId = userId;
+        this.room = room;
+        this.users = users;
+        this.ownerId = ownerId;
+    }
+
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
+    }
+
+    toBuffer(): Buffer {
+        return super.toBuffer(this);
+    }
+}
+
+const KickUserSchema = Type.forSchema({
+    type: "record",
+    name: "KickUserMessage",
+    fields: [{ name: "userId", type: "string" }],
+});
+
+export class KickUserMessage extends Message {
+    userId: string;
+    private static readonly schema = KickUserSchema;
+    private static readonly type = MessageType.KICK_USER;
+
+    constructor(userId: string) {
+        super(KickUserMessage.schema, KickUserMessage.type);
+        this.userId = userId;
+    }
+
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
+    }
+
+    toBuffer(): Buffer {
+        return super.toBuffer(this);
+    }
+}
+
+const UserJoinedSchema = Type.forSchema({
+    type: "record",
+    name: "UserJoinedMessage",
+    fields: [
+        { name: "userId", type: "string" },
         { name: "username", type: "string" },
     ],
 });
 
-export class ChatMessage {
+export class UserJoinedMessage extends Message {
+    userId: string;
     username: string;
-    content: string;
-    constructor(username: string, content: string) {
+    private static readonly schema = UserJoinedSchema;
+    private static readonly type = MessageType.USER_JOINED_INFO;
+
+    constructor(userId: string, username: string) {
+        super(UserJoinedMessage.schema, UserJoinedMessage.type);
+        this.userId = userId;
         this.username = username;
-        this.content = content;
     }
 
-    static fromBuffer(message: GenericMessage): ChatMessage {
-        return ChatMessageSchema.fromBuffer(message.payload) as ChatMessage;
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
     }
 
     toBuffer(): Buffer {
-        return msgToBuffer(MessageType.CHAT_MESSAGE, ChatMessageSchema, this);
+        return super.toBuffer(this);
     }
 }
 
-const LeaveRoomSchema = Type.forSchema({
+const UserLeftSchema = Type.forSchema({
     type: "record",
-    name: "LeaveRoomMessage",
+    name: "UserLeftMessage",
     fields: [
-        { name: "content", type: "string" },
-        { name: "username", type: "string" },
+        { name: "userId", type: "string" },
+        { name: "ownerId", type: "string" },
     ],
 });
 
-export class LeaveRoomMessage {
-    username: string;
-    content: string;
-    constructor(username: string, content: string) {
-        this.username = username;
-        this.content = content;
+export class UserLeftMessage extends Message {
+    userId: string;
+    ownerId: string;
+    private static readonly schema = UserLeftSchema;
+    private static readonly type = MessageType.USER_LEFT_INFO;
+
+    constructor(userId: string, ownerId: string) {
+        super(UserLeftMessage.schema, UserLeftMessage.type);
+        this.userId = userId;
+        this.ownerId = ownerId;
     }
 
-    static fromBuffer(message: GenericMessage): LeaveRoomMessage {
-        return LeaveRoomSchema.fromBuffer(message.payload) as LeaveRoomMessage;
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
     }
 
     toBuffer(): Buffer {
-        return msgToBuffer(MessageType.LEAVE_ROOM, LeaveRoomSchema, this);
+        return super.toBuffer(this);
     }
 }
+
+// TODO: Add more fields probably
 const ChangeRoomSchema = Type.forSchema({
     type: "record",
-    name: "ChatMessage",
-    fields: [{ name: "room", type: "string" }],
+    name: "ChangeRoomMessage",
+    fields: [{ name: "roundNumber", type: "int" }],
 });
 
-export class ChangeRoomMessage {
-    room: string;
-    constructor(room: string) {
-        this.room = room;
+export class ChangeRoomMessage extends Message {
+    roundNumber: number;
+    private static readonly schema = ChangeRoomSchema;
+    private static readonly type = MessageType.CHANGE_ROOM;
+
+    constructor(roundNumber: number) {
+        super(ChangeRoomMessage.schema, ChangeRoomMessage.type);
+        this.roundNumber = roundNumber;
     }
 
-    static fromBuffer(message: GenericMessage): ChangeRoomMessage {
-        return ChangeRoomSchema.fromBuffer(
-            message.payload
-        ) as ChangeRoomMessage;
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
     }
 
     toBuffer(): Buffer {
-        return msgToBuffer(MessageType.CHANGE_ROOM, ChangeRoomSchema, this);
-    }
-}
-
-const NotificationSchema = Type.forSchema({
-    type: "record",
-    name: "NotificationMessage",
-    fields: [
-        { name: "username", type: "string" },
-        { name: "content", type: "string" },
-    ],
-});
-
-export class NotificationMessage {
-    username: string;
-    content: string;
-    constructor(username: string, content: string) {
-        this.username = username;
-        this.content = content;
-    }
-
-    static fromBuffer(message: GenericMessage): NotificationMessage {
-        return NotificationSchema.fromBuffer(
-            message.payload
-        ) as NotificationMessage;
-    }
-
-    toBuffer(): Buffer {
-        return msgToBuffer(MessageType.NOTIFICATION, NotificationSchema, this);
+        return super.toBuffer(this);
     }
 }

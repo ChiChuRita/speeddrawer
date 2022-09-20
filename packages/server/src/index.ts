@@ -1,34 +1,67 @@
 import "dotenv/config";
 import { Server, WebSocket } from "ws";
 import {
-    ChatMessage,
     MessageType,
     msgFromBuffer,
     GenericMessage,
-    ChangeRoomMessage,
-    LeaveRoomMessage,
-    NotificationMessage,
+    InitializeUserMessage,
+    InitializeUserResponseMessage,
+    KickUserMessage,
 } from "@speeddrawer/shared";
 import { nanoid } from "nanoid";
 import { consoleLog, InfoLevel } from "./console-log";
+import { writeFileSync } from "fs";
 
 class User {
-    username: string;
+    username: string | null;
     id: string;
-    currentGameRoom: GameRoom;
+    currentGameRoom: GameRoom | null;
     ws: WebSocket;
     isAlive: boolean;
-    static users = new Map<WebSocket, User>();
+    static users = new Map<string, User>();
 
     constructor(ws: WebSocket) {
-        const uid = nanoid(6);
-        this.username = "User" + uid;
-        this.id = uid;
-        this.currentGameRoom = new GameRoom(uid, this);
+        this.username = null;
+        this.id = nanoid(6);
+        this.currentGameRoom = null;
         this.ws = ws;
         this.isAlive = true;
 
-        User.users.set(ws, this);
+        User.users.set(this.id, this);
+    }
+
+    // TODO: Check if user is username correct and room not full
+    initializeUser(
+        username: string,
+        roomId: string | null
+    ): InitializeUserResponseMessage {
+        let usernameCorrect = false;
+        if (username.length > 2 && username.length < 20) usernameCorrect = true;
+
+        if (usernameCorrect) {
+            if (!roomId) this.newGameRoom();
+            else this.joinGameRoom(roomId);
+
+            if (this.currentGameRoom) {
+                this.username = username;
+                return new InitializeUserResponseMessage(
+                    this.id,
+                    this.currentGameRoom.id,
+                    this.currentGameRoom.users.map((user) => {
+                        return { id: user.id, username: user.username! };
+                    }),
+                    this.currentGameRoom.owner.id
+                );
+            }
+        }
+
+        return new InitializeUserResponseMessage(null, null, null, null);
+    }
+
+    static getUserById(id: string): User | null {
+        const user = User.users.get(id);
+        if (user) return user;
+        return null;
     }
 
     static heartbeat = setInterval(() => {
@@ -51,59 +84,56 @@ class User {
         this.disconnect();
     }
 
-    changeGameRoom(GameRoomId: string): boolean {
-        //TODO: Check if GameRoom is not full
-        const GameRoomToJoin = GameRoom.GameRooms.get(GameRoomId);
-        if (
-            GameRoomToJoin !== undefined &&
-            GameRoomToJoin !== this.currentGameRoom
-        ) {
-            this.currentGameRoom.removeUser(this);
-            this.currentGameRoom = GameRoomToJoin;
-            this.currentGameRoom.addUser(this);
-
-            this.currentGameRoom.sendToAll(
-                new NotificationMessage(
-                    this.username,
-                    "joined the GameRoom"
-                ).toBuffer(),
-                this
-            );
-            return true;
-        } else {
-            consoleLog(
-                `GameRoom ${GameRoomId} does not exist`,
-                InfoLevel.WARNING
-            );
-            return false;
-        }
-    }
-    leaveGameRoom() {
-        this.currentGameRoom.removeUser(this);
+    newGameRoom() {
+        this.leaveGameRoom();
         const newGameRoomId = nanoid(6);
         this.currentGameRoom = new GameRoom(newGameRoomId, this);
     }
 
+    joinGameRoom(roomId: string): boolean {
+        //TODO: Check if GameRoom is not full
+        const GameRoomToJoin = GameRoom.GameRooms.get(roomId);
+        if (
+            GameRoomToJoin !== undefined &&
+            GameRoomToJoin !== this.currentGameRoom
+        ) {
+            this.leaveGameRoom();
+            this.currentGameRoom = GameRoomToJoin;
+            this.currentGameRoom.addUser(this);
+            return true;
+        } else return false;
+    }
+
+    leaveGameRoom() {
+        if (this.currentGameRoom) {
+            this.currentGameRoom.removeUser(this);
+            this.currentGameRoom = null;
+        }
+    }
+
     terminate() {
+        this.leaveGameRoom();
         this.ws.terminate();
-        this.currentGameRoom.removeUser(this);
-        User.users.delete(this.ws);
+
+        User.users.delete(this.id);
     }
     disconnect() {
+        this.leaveGameRoom();
         this.ws.close();
-        this.currentGameRoom.removeUser(this);
-        User.users.delete(this.ws);
+
+        User.users.delete(this.id);
     }
+
+    kickOtherUser(userId: string) {
+        const user = User.getUserById(userId);
+        if (user && this.currentGameRoom!.owner) user.disconnect();
+    }
+
     alive() {
         this.isAlive = true;
     }
     sendMessage(message: Buffer) {
         if (this.ws.readyState === WebSocket.OPEN) this.ws.send(message);
-    }
-
-    // TODO: Notificate all users in the GameRoom
-    changeUsername(newUsername: string) {
-        this.username = newUsername;
     }
 }
 
@@ -182,7 +212,7 @@ class GameRoom {
 }
 
 const port = +(process.env.PORT || 1234);
-
+/*
 const sendChatMessage = (user: User, message: ChatMessage) => {
     if (user.currentGameRoom) {
         user.currentGameRoom.users.forEach((GameRoomUser) => {
@@ -195,23 +225,23 @@ const sendChatMessage = (user: User, message: ChatMessage) => {
         });
     }
 };
-
+*/
 const handleMessage = (user: User, data: any) => {
     const genericMessage = msgFromBuffer(data);
     let message;
+    if (genericMessage.type != MessageType.INITIALIZE_USER && !user.username)
+        user.disconnect();
     switch (genericMessage.type) {
-        case MessageType.CHANGE_ROOM:
-            message = ChangeRoomMessage.fromBuffer(genericMessage);
-            user.changeGameRoom(message.room);
+        case MessageType.INITIALIZE_USER:
+            message = InitializeUserMessage.fromBuffer(genericMessage);
+            const responseMsg = user.initializeUser(
+                message.username,
+                message.roomId
+            );
+            user.sendMessage(responseMsg.toBuffer());
             break;
-        case MessageType.LEAVE_ROOM:
-            user.leaveGameRoom();
-            break;
-        case MessageType.CHAT_MESSAGE:
-            message = ChatMessage.fromBuffer(genericMessage);
-            sendChatMessage(user, message);
-            break;
-        case MessageType.CHANGE_USERNAME:
+        case MessageType.KICK_USER:
+            message = KickUserMessage.fromBuffer(genericMessage);
     }
 };
 
@@ -231,9 +261,9 @@ wss.on("connection", (ws, req) => {
         handleMessage(user, data);
     });
 });
+
 wss.on("close", () => {
     clearInterval(User.heartbeat);
 });
+
 consoleLog("Server started on port " + port, InfoLevel.INFO);
-const tmp = new ChatMessage("hans", "hi");
-tmp.toBuffer();
