@@ -31,6 +31,7 @@ const MyCanvas: React.FC<MyCanvasProps> = ({ width, height }) => {
                     ref={canvas}
                     width={width}
                     height={height}
+                    onContextMenu={(ev) => ev.preventDefault()}
                 >
                     Your browser is rubbish!
                 </canvas>
@@ -39,6 +40,7 @@ const MyCanvas: React.FC<MyCanvasProps> = ({ width, height }) => {
                     ref={previewCanvas}
                     width={width}
                     height={height}
+                    onContextMenu={(ev) => ev.preventDefault()}
                 ></canvas>
             </div>
             <DrawingTools

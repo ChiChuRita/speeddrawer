@@ -58,8 +58,12 @@ class Drawer {
         this.ctx.fillRect(
             firstPoint.x,
             firstPoint.y,
-            secondPoint.x - firstPoint.x + 1,
-            secondPoint.y - firstPoint.y + 1
+            secondPoint.x -
+                firstPoint.x +
+                (secondPoint.x < firstPoint.x ? 0 : 1),
+            secondPoint.y -
+                firstPoint.y +
+                (secondPoint.y < firstPoint.y ? 0 : 1)
         );
         if (stack) this.drawStack.pushRect(firstPoint, secondPoint, color);
     }
@@ -74,6 +78,8 @@ class Drawer {
             Math.pow(secondPoint.x - firstPoint.x, 2) +
                 Math.pow(secondPoint.y - firstPoint.y, 2)
         );
+
+        if (radius < 1) return;
 
         let imageData = this.ctx.getImageData(
             firstPoint.x - radius,
@@ -134,7 +140,6 @@ class Drawer {
     }
 
     public draw(drawCommands: DrawCommand[], stack = false) {
-        console.log(drawCommands);
         drawCommands.forEach((command) => {
             switch (command.type) {
                 case DrawType.Begin:

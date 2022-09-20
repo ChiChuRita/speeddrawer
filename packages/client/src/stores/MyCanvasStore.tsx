@@ -78,7 +78,7 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
                 case InputMode.DrawLine:
                     if (ev.buttons !== 1) return;
                     drawer.begin();
-                    previewDrawer.drawPixel(firstPos, currentColor.preview);
+                    drawer.drawPixel(firstPos, currentColor, true);
                     break;
                 case InputMode.DrawRect:
                     previewDrawer.drawRect(
@@ -90,6 +90,7 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
                 case InputMode.DrawCircle:
                     break;
                 case InputMode.DrawFill:
+                    if (ev.buttons !== 1) return;
                     drawer.fill(firstPos, currentColor, true);
                     break;
             }
@@ -112,15 +113,17 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
                     drawer.drawLine(lastPos, currentPos, currentColor, true);
                     break;
                 case InputMode.DrawRect:
+                    if (!firstPos) return;
                     previewDrawer.drawRect(
-                        firstPos || currentPos,
+                        firstPos,
                         currentPos,
                         currentColor.preview
                     );
                     break;
                 case InputMode.DrawCircle:
+                    if (!firstPos) return;
                     previewDrawer.drawCircle(
-                        firstPos || currentPos,
+                        firstPos,
                         currentPos,
                         currentColor.preview
                     );
