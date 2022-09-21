@@ -113,7 +113,13 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
                     drawer.drawLine(lastPos, currentPos, currentColor, true);
                     break;
                 case InputMode.DrawRect:
-                    if (!firstPos) return;
+                    if (!firstPos) {
+                        previewDrawer.drawPixel(
+                            currentPos,
+                            currentColor.preview
+                        );
+                        return;
+                    }
                     previewDrawer.drawRect(
                         firstPos,
                         currentPos,
