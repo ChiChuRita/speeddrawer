@@ -3,10 +3,15 @@ import { Server, WebSocket } from "ws";
 import {
     MessageType,
     msgFromBuffer,
-    GenericMessage,
     InitializeUserMessage,
     InitializeUserResponseMessage,
     KickUserMessage,
+    UserJoinedInfoMessage,
+    UserLeftInfoMessage,
+    ChangeRoomMessage,
+    ChangeRoomInfoMessage,
+    GameStartMessage,
+    GameStartInfoMessage,
 } from "@speeddrawer/shared";
 import { nanoid } from "nanoid";
 import { consoleLog, InfoLevel } from "./console-log";
@@ -100,6 +105,10 @@ class User {
             this.leaveGameRoom();
             this.currentGameRoom = GameRoomToJoin;
             this.currentGameRoom.addUser(this);
+
+            const message = new UserJoinedInfoMessage(this.id, this.username!);
+            this.currentGameRoom.sendToAll(message.toBuffer(), this);
+
             return true;
         } else return false;
     }
@@ -107,6 +116,13 @@ class User {
     leaveGameRoom() {
         if (this.currentGameRoom) {
             this.currentGameRoom.removeUser(this);
+
+            const message = new UserLeftInfoMessage(
+                this.id,
+                this.currentGameRoom.owner.id
+            );
+            this.currentGameRoom.sendToAll(message.toBuffer(), this);
+
             this.currentGameRoom = null;
         }
     }
@@ -126,7 +142,12 @@ class User {
 
     kickOtherUser(userId: string) {
         const user = User.getUserById(userId);
-        if (user && this.currentGameRoom!.owner) user.disconnect();
+        if (
+            user &&
+            user.currentGameRoom == this.currentGameRoom &&
+            this.currentGameRoom!.owner == this
+        )
+            user.disconnect();
     }
 
     alive() {
@@ -135,6 +156,11 @@ class User {
     sendMessage(message: Buffer) {
         if (this.ws.readyState === WebSocket.OPEN) this.ws.send(message);
     }
+
+    changeRoom(roundNumber: number) {
+        if (this.currentGameRoom!.owner == this)
+            this.currentGameRoom!.changeRoom(roundNumber);
+    }
 }
 
 class GameRoom {
@@ -142,6 +168,7 @@ class GameRoom {
     users: User[];
     hasStarted: boolean;
     owner: User;
+    roundNumber: number;
     static GameRooms = new Map<string, GameRoom>();
 
     constructor(id: string, firstUser: User) {
@@ -149,6 +176,7 @@ class GameRoom {
         this.users = [firstUser];
         this.hasStarted = false;
         this.owner = firstUser;
+        this.roundNumber = 4;
 
         GameRoom.GameRooms.set(id, this);
     }
@@ -192,7 +220,6 @@ class GameRoom {
         });
     }
 
-    // TODO: Send notification to all users that the owner changed
     setNewOwner() {
         this.owner = this.users[0];
     }
@@ -208,6 +235,10 @@ class GameRoom {
     // TODO: Send notification to all users that the Game ended
     endGame() {
         this.hasStarted = false;
+    }
+
+    changeRoom(roundNumber: number) {
+        this.roundNumber = roundNumber;
     }
 }
 
@@ -228,9 +259,11 @@ const sendChatMessage = (user: User, message: ChatMessage) => {
 */
 const handleMessage = (user: User, data: any) => {
     const genericMessage = msgFromBuffer(data);
-    let message;
+    // Check if user is initialized before sending commands
     if (genericMessage.type != MessageType.INITIALIZE_USER && !user.username)
         user.disconnect();
+
+    let message;
     switch (genericMessage.type) {
         case MessageType.INITIALIZE_USER:
             message = InitializeUserMessage.fromBuffer(genericMessage);
@@ -242,6 +275,12 @@ const handleMessage = (user: User, data: any) => {
             break;
         case MessageType.KICK_USER:
             message = KickUserMessage.fromBuffer(genericMessage);
+            user.kickOtherUser(message.userId);
+            break;
+        case MessageType.CHANGE_ROOM:
+            message = ChangeRoomMessage.fromBuffer(genericMessage);
+            user.changeRoom(message.roundNumber);
+            break;
     }
 };
 

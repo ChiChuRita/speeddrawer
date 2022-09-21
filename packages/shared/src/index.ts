@@ -197,23 +197,23 @@ export class KickUserMessage extends Message {
     }
 }
 
-const UserJoinedSchema = Type.forSchema({
+const UserJoinedInfoSchema = Type.forSchema({
     type: "record",
-    name: "UserJoinedMessage",
+    name: "UserJoinedInfoMessage",
     fields: [
         { name: "userId", type: "string" },
         { name: "username", type: "string" },
     ],
 });
 
-export class UserJoinedMessage extends Message {
+export class UserJoinedInfoMessage extends Message {
     userId: string;
     username: string;
-    private static readonly schema = UserJoinedSchema;
+    private static readonly schema = UserJoinedInfoSchema;
     private static readonly type = MessageType.USER_JOINED_INFO;
 
     constructor(userId: string, username: string) {
-        super(UserJoinedMessage.schema, UserJoinedMessage.type);
+        super(UserJoinedInfoMessage.schema, UserJoinedInfoMessage.type);
         this.userId = userId;
         this.username = username;
     }
@@ -227,23 +227,23 @@ export class UserJoinedMessage extends Message {
     }
 }
 
-const UserLeftSchema = Type.forSchema({
+const UserLeftInfoSchema = Type.forSchema({
     type: "record",
-    name: "UserLeftMessage",
+    name: "UserLeftInfoMessage",
     fields: [
         { name: "userId", type: "string" },
         { name: "ownerId", type: "string" },
     ],
 });
 
-export class UserLeftMessage extends Message {
+export class UserLeftInfoMessage extends Message {
     userId: string;
     ownerId: string;
-    private static readonly schema = UserLeftSchema;
+    private static readonly schema = UserLeftInfoSchema;
     private static readonly type = MessageType.USER_LEFT_INFO;
 
     constructor(userId: string, ownerId: string) {
-        super(UserLeftMessage.schema, UserLeftMessage.type);
+        super(UserLeftInfoMessage.schema, UserLeftInfoMessage.type);
         this.userId = userId;
         this.ownerId = ownerId;
     }
@@ -272,6 +272,77 @@ export class ChangeRoomMessage extends Message {
     constructor(roundNumber: number) {
         super(ChangeRoomMessage.schema, ChangeRoomMessage.type);
         this.roundNumber = roundNumber;
+    }
+
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
+    }
+
+    toBuffer(): Buffer {
+        return super.toBuffer(this);
+    }
+}
+
+const ChangeRoomInfoSchema = Type.forSchema({
+    type: "record",
+    name: "ChangeRoomInfoMessage",
+    fields: [{ name: "roundNumber", type: "int" }],
+});
+
+export class ChangeRoomInfoMessage extends Message {
+    roundNumber: number;
+    private static readonly schema = ChangeRoomInfoSchema;
+    private static readonly type = MessageType.CHANGE_ROOM_INFO;
+
+    constructor(roundNumber: number) {
+        super(ChangeRoomInfoMessage.schema, ChangeRoomInfoMessage.type);
+        this.roundNumber = roundNumber;
+    }
+
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
+    }
+
+    toBuffer(): Buffer {
+        return super.toBuffer(this);
+    }
+}
+
+const GameStartSchema = Type.forSchema({
+    type: "record",
+    name: "GameStartMessage",
+    fields: [],
+});
+
+export class GameStartMessage extends Message {
+    private static readonly schema = GameStartSchema;
+    private static readonly type = MessageType.GAME_START;
+
+    constructor() {
+        super(GameStartMessage.schema, GameStartMessage.type);
+    }
+
+    static fromBuffer(message: GenericMessage) {
+        return this.schema.fromBuffer(message.payload) as typeof this.prototype;
+    }
+
+    toBuffer(): Buffer {
+        return super.toBuffer(this);
+    }
+}
+
+const GameStartInfoSchema = Type.forSchema({
+    type: "record",
+    name: "GameStartInfoMessage",
+    fields: [],
+});
+
+export class GameStartInfoMessage extends Message {
+    private static readonly schema = GameStartInfoSchema;
+    private static readonly type = MessageType.GAME_START_INFO;
+
+    constructor() {
+        super(GameStartInfoMessage.schema, GameStartInfoMessage.type);
     }
 
     static fromBuffer(message: GenericMessage) {
