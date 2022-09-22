@@ -32,8 +32,8 @@ const useGameStore = create<GameStore>((set, get) => ({
                 remoteDrawer.clear();
                 remoteDrawer.draw(drawStack.stack);
             }
-            remoteDrawer.pixelate();
-        }, 70);
+            remoteDrawer.pixelate(1);
+        }, 1000 / 15);
     },
     stop: () => {
         clearInterval(intervalFunction);
