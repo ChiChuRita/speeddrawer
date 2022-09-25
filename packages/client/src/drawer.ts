@@ -81,32 +81,9 @@ class Drawer {
 
         if (radius < 1) return;
 
-        let imageData = this.ctx.getImageData(
-            firstPoint.x - radius,
-            firstPoint.y - radius,
-            radius * 2,
-            radius * 2
-        );
+        //need a way better way to creat circles
+        //TODO: fix this
 
-        for (let x = 0; x < imageData.width; x++) {
-            for (let y = 0; y < imageData.height; y++) {
-                let index = (x + y * imageData.width) * 4;
-                let dx = x - radius;
-                let dy = y - radius;
-                if (dx * dx + dy * dy < radius * radius) {
-                    imageData.data[index] = color.r;
-                    imageData.data[index + 1] = color.g;
-                    imageData.data[index + 2] = color.b;
-                    imageData.data[index + 3] = color.a;
-                }
-            }
-        }
-
-        this.ctx.putImageData(
-            imageData,
-            firstPoint.x - radius,
-            firstPoint.y - radius
-        );
         if (stack) this.drawStack.pushCircle(firstPoint, secondPoint, color);
     }
 
