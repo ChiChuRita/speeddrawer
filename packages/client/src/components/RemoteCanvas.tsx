@@ -9,16 +9,10 @@ interface RemoteCanvasProps {
 
 const RemoteCanvas: React.FC<RemoteCanvasProps> = ({ width, height }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { start, stop } = useGameStore();
-    const drawer = useMyCanvasStore((state) => state.drawer);
 
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        if (drawer) start(canvas, drawer);
-        return () => stop();
-    }, [drawer]);
+        //implement remote canvas
+    }, []);
 
     return (
         <canvas
