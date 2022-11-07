@@ -1,6 +1,7 @@
 import create from "zustand";
 import Drawer, { Point } from "../drawer";
 import Color from "../color";
+import { render } from "react-dom";
 
 interface MyCanvasStore {
     canvas: HTMLCanvasElement | null;
@@ -46,9 +47,10 @@ const useMyCanvasStore = create<MyCanvasStore>((set, get) => ({
     },
     mount: (canvas: HTMLCanvasElement, previewCanvas: HTMLCanvasElement) => {
         const ctx = canvas.getContext("2d")!; //probalby do some error handling here
+        const renderCtx = canvas.getContext("webgl2")!;
         const previewCtx = previewCanvas.getContext("2d")!; //probalby do some error handling here
-        const drawer = new Drawer(ctx);
-        const previewDrawer = new Drawer(previewCtx);
+        const drawer = new Drawer(ctx, renderCtx);
+        const previewDrawer = new Drawer(previewCtx, renderCtx);
         set({
             canvas,
             previewCanvas,

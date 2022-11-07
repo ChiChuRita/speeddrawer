@@ -10,10 +10,15 @@ export interface Point {
 
 class Drawer {
     private readonly ctx: CanvasRenderingContext2D;
+    private readonly renderCtx: WebGL2RenderingContext;
     public readonly drawStack: DrawStack;
 
-    constructor(ctx: CanvasRenderingContext2D) {
+    constructor(
+        ctx: CanvasRenderingContext2D,
+        renderCtx: WebGL2RenderingContext
+    ) {
         this.ctx = ctx;
+        this.renderCtx = renderCtx;
         this.drawStack = new DrawStack();
     }
 
