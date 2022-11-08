@@ -9,7 +9,7 @@ interface SocketStore {
 const useSocketStore = create<SocketStore>((set, get) => ({
     socket: null,
     start: () => {
-        const socket = new WebSocket("ws://localhost:8080");
+        const socket = new WebSocket("ws://localhost:1234");
         set({ socket });
 
         //PLAYGROUND FOR TESTING
@@ -34,3 +34,5 @@ const useSocketStore = create<SocketStore>((set, get) => ({
         set({ socket: null });
     },
 }));
+
+export default useSocketStore;

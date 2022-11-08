@@ -12,7 +12,7 @@ export enum MessageType {
     GAME_START_INFO,
 }
 
-export interface GenericMessage {
+interface GenericMessage {
     type: MessageType;
     payload: Buffer;
 }
@@ -85,7 +85,7 @@ const InitializeUserSchema = Type.forSchema({
     name: "InitializeUserMessage",
     fields: [
         { name: "username", type: "string" },
-        { name: "roomId", type: ["string", "null"], default: null },
+        { name: "roomId", type: ["null", "string"], default: null },
     ],
 });
 
@@ -114,11 +114,12 @@ const InitializeUserResponseSchema = Type.forSchema({
     type: "record",
     name: "InitializeUserMessage",
     fields: [
-        { name: "userId", type: ["string", "null"], default: null },
-        { name: "room", type: ["string", "null"], default: null },
+        { name: "userId", type: ["null", "string"], default: null },
+        { name: "room", type: ["null", "string"], default: null },
         {
             name: "users",
             type: [
+                "null",
                 {
                     type: "array",
                     items: {
@@ -130,11 +131,10 @@ const InitializeUserResponseSchema = Type.forSchema({
                         ],
                     },
                 },
-                "null",
             ],
             default: null,
         },
-        { name: "ownerId", type: ["string", "null"], default: null },
+        { name: "ownerId", type: ["null", "string"], default: null },
     ],
 });
 

@@ -17,6 +17,8 @@ import { nanoid } from "nanoid";
 import { consoleLog, InfoLevel } from "./console-log";
 import { writeFileSync } from "fs";
 
+const port = +(process.env.PORT || 1234);
+
 class User {
     username: string | null;
     id: string;
@@ -140,6 +142,7 @@ class User {
         User.users.delete(this.id);
     }
 
+    //TODO: Send left to all except the user you kicked, not the owner (this)
     kickOtherUser(userId: string) {
         const user = User.getUserById(userId);
         if (
@@ -242,21 +245,6 @@ class GameRoom {
     }
 }
 
-const port = +(process.env.PORT || 1234);
-/*
-const sendChatMessage = (user: User, message: ChatMessage) => {
-    if (user.currentGameRoom) {
-        user.currentGameRoom.users.forEach((GameRoomUser) => {
-            if (
-                GameRoomUser.ws.readyState === WebSocket.OPEN &&
-                GameRoomUser.ws !== user.ws
-            ) {
-                GameRoomUser.ws.send(message.toBuffer());
-            }
-        });
-    }
-};
-*/
 const handleMessage = (user: User, data: any) => {
     const genericMessage = msgFromBuffer(data);
     // Check if user is initialized before sending commands
@@ -299,6 +287,7 @@ wss.on("connection", (ws, req) => {
     ws.on("message", (data) => {
         handleMessage(user, data);
     });
+    ws.send("Welcome to the server!");
 });
 
 wss.on("close", () => {
